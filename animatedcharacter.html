@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Game Guide Character</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        overflow: hidden;
+      }
+
+      #character {
+        position: absolute;
+        bottom: 1px;
+        left: 10px;
+        width: 120px;
+        z-index: 999;
+        cursor: pointer;
+        /* Rounded corner styling */
+        border-radius: 20px; /* adjust for more or less roundness */
+        overflow: hidden; /* ensures the GIF is clipped to the rounded shape */
+      }
+
+      .toast {
+        position: absolute;
+        bottom: 130px;
+        left: 20px;
+        background: #ffffffee;
+        padding: 10px 16px;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        font-family: "Comic Sans MS", Arial, sans-serif;
+        font-size: 14px;
+        color: #333;
+        animation: fadein 0.5s ease, fadeout 0.5s ease 2.5s;
+        opacity: 0;
+      }
+
+      @keyframes fadein {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes fadeout {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Default idle character -->
+    <img
+      id="character"
+      src="assets/images/image.gif"
+      alt="Game Guide Character"
+    />
+
+    <script>
+      const character = document.getElementById("character");
+
+      const messages = {
+        idle: ["Hi there! Ready to pop some bubbles?"],
+        pop: ["Nice pop!", "Great shot!", "Boom!"],
+        win: ["Well done, champ!", "Victory! Let’s move on!"],
+        fail: ["Oh no! That one escaped!", "Be careful! Try again!"],
+        warning: ["Careful! You're almost out!", "Pop faster or game over!"],
+      };
+
+      const characterGIFs = {
+        idle: "assets/images/image.gif",
+        pop: "assets/images/image.gif",
+        win: "assets/images/image.gif",
+        fail: "assets/images/image.gif",
+        warning: "assets/images/image.gif",
+      };
+
+      // Show animated speech toast
+      function showToast(message) {
+        const toast = document.createElement("div");
+        toast.className = "toast";
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        void toast.offsetWidth;
+        toast.style.opacity = 1;
+
+        setTimeout(() => {
+          try {
+            toast.remove();
+          } catch (e) {}
+        }, 3000);
+      }
+
+      // Switch GIF based on emotion/state
+      function changeCharacter(state) {
+        const gif = characterGIFs[state] || characterGIFs.idle;
+        character.src = gif;
+
+        // Reset to idle after 3 seconds unless already idle
+        if (state !== "idle") {
+          clearTimeout(window._resetCharacter);
+          window._resetCharacter = setTimeout(() => {
+            character.src = characterGIFs.idle;
+          }, 3000);
+        }
+      }
+
+      // Core function for external or internal triggers
+      function guideReact(state) {
+        if (!messages[state]) return;
+        const msgList = messages[state];
+        const msg = msgList[Math.floor(Math.random() * msgList.length)];
+        showToast(msg);
+        changeCharacter(state);
+      }
+
+      // Handle user click for testing (optional)
+      character.addEventListener("click", () => {
+        guideReact("idle");
+      });
+
+      // Expose to parent game iframe
+      window.guideReact = guideReact;
+
+      // Listen for postMessage from game
+      window.addEventListener("message", (event) => {
+        if (event.data && typeof event.data.type === "string") {
+          guideReact(event.data.type);
+        }
+      });
+    </script>
+  </body>
+</html>
